@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Запись в клинику</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Запись на прием</h1>
+        
+        <div class="booking-form">
+            <!-- Выбор врача -->
+            <div class="form-group">
+                <label for="doctor">👨‍⚕️ Выберите врача:</label>
+                <select id="doctor">
+                    <option value="">-- Выберите врача --</option>
+                    <option value="Терапевт Иванова М.И.">Терапевт Иванова М.И.</option>
+                    <option value="Кардиолог Петров С.А.">Кардиолог Петров С.А.</option>
+                    <option value="Невролог Сидорова А.В.">Невролог Сидорова А.В.</option>
+                    <option value="Офтальмолог Кузнецов Д.В.">Офтальмолог Кузнецов Д.В.</option>
+                </select>
+            </div>
+
+            <!-- Выбор даты -->
+            <div class="form-group">
+                <label for="date">📅 Выберите дату:</label>
+                <input type="date" id="date">
+            </div>
+
+            <!-- Выбор времени -->
+            <div class="form-group">
+                <label for="time">⏰ Выберите время:</label>
+                <select id="time">
+                    <option value="">-- Сначала выберите врача и дату --</option>
+                </select>
+            </div>
+
+            <!-- Поля для контактных данных -->
+            <div class="form-group">
+                <label for="name">👤 Ваше имя:</label>
+                <input type="text" id="name" placeholder="Введите ваше имя">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">📞 Телефон:</label>
+                <input type="tel" id="phone" placeholder="+7 (___) ___-__-__">
+            </div>
+
+            <button id="submitBtn" class="submit-btn">✅ Записаться</button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="appointments">
+            <h2>📋 Мои записи</h2>
+            <div id="appointmentsList" class="appointments-list">
+                <p class="empty-message">У вас пока нет записей</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
