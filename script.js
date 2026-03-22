@@ -3,112 +3,178 @@ const SUPABASE_URL = 'https://pybzxnewptledlezyyuj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5Ynp4bmV3cHRsZWRsZXp5eXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxODI1MjAsImV4cCI6MjA4OTc1ODUyMH0.jdYcl1BuBcgE2axHTdAiq06ANMmKaO3_6zrA94zMQGM';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const TIMES = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 
-// КЭШИРОВАНИЕ (уменьшает запросы в 5-10 раз)
-let cache = {
-    doctors: null,
-    appointments: null,
-    reviews: null,
-    lastUpdate: 0
-};
+// ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
+let currentUser = null;
+let allDoctors = [];
+let allAppointments = [];
+let allReviews = [];
+let selectedRating = 5;
 
-const CACHE_TIME = 60000; // 1 минута (обновляем раз в минуту)
+// ========== АВТОРИЗАЦИЯ ==========
+async function checkAuth() {
+    try {
+        const { data: { session }, error } = await sb.auth.getSession();
+        if (error) throw error;
+        
+        if (session) {
+            currentUser = session.user;
+            const userInfo = document.getElementById('userInfo');
+            const userEmail = document.getElementById('userEmail');
+            if (userInfo) userInfo.style.display = 'flex';
+            if (userEmail) userEmail.textContent = currentUser.email;
+            console.log('✅ Авторизован:', currentUser.email);
+        } else {
+            console.log('❌ Не авторизован');
+        }
+    } catch (err) {
+        console.error('Ошибка проверки сессии:', err);
+    }
+}
 
-// ========== УМНАЯ ЗАГРУЗКА (только если нужно) ==========
-async function loadIfNeeded(type, force = false) {
-    const now = Date.now();
-    const needUpdate = force || !cache[type] || (now - cache.lastUpdate) > CACHE_TIME;
+function showAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) modal.style.display = 'block';
+}
+
+function hideAuthModal() {
+    const modal = document.getElementById('authModal');
+    const email = document.getElementById('authEmail');
+    const password = document.getElementById('authPassword');
+    const msg = document.getElementById('authMessage');
+    if (modal) modal.style.display = 'none';
+    if (email) email.value = '';
+    if (password) password.value = '';
+    if (msg) msg.textContent = '';
+}
+
+async function login() {
+    const email = document.getElementById('authEmail')?.value;
+    const password = document.getElementById('authPassword')?.value;
+    const msg = document.getElementById('authMessage');
     
-    if (!needUpdate) return cache[type];
+    if (!email || !password) {
+        if (msg) msg.textContent = '❌ Заполните все поля';
+        return;
+    }
     
     try {
-        const { data, error } = await sb.from(type).select('*').limit(500);
-        if (!error) {
-            cache[type] = data;
-            cache.lastUpdate = now;
-            console.log(`📡 Загружено ${type}: ${data.length} записей`);
-            return data;
-        }
-    } catch (e) {
-        console.error('Ошибка', e);
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        
+        currentUser = data.user;
+        const userInfo = document.getElementById('userInfo');
+        const userEmail = document.getElementById('userEmail');
+        if (userInfo) userInfo.style.display = 'flex';
+        if (userEmail) userEmail.textContent = currentUser.email;
+        
+        hideAuthModal();
+        showMsg('✅ Добро пожаловать, ' + currentUser.email, 'success');
+    } catch (err) {
+        if (msg) msg.textContent = '❌ ' + err.message;
     }
-    return cache[type] || [];
 }
 
-
-
-// ========== ПАРАЛЛЕЛЬНАЯ ЗАГРУЗКА (одновременная, быстрее) ==========
-async function loadAllData() {
-    const [doctors, appointments, reviews] = await Promise.all([
-        loadIfNeeded('doctors'),
-        loadIfNeeded('appointments'),
-        loadIfNeeded('reviews')
-    ]);
+async function register() {
+    const email = document.getElementById('authEmail')?.value;
+    const password = document.getElementById('authPassword')?.value;
+    const msg = document.getElementById('authMessage');
     
-    allDoctors = doctors;
-    allAppointments = appointments;
-    allReviews = reviews;
+    if (!email || !password) {
+        if (msg) msg.textContent = '❌ Заполните все поля';
+        return;
+    }
     
-    renderDoctors();
-    renderAppointments();
-    renderReviews();
-    updateDoctorSelects();
-    updateTimeOptions();
+    if (password.length < 6) {
+        if (msg) msg.textContent = '❌ Пароль не менее 6 символов';
+        return;
+    }
+    
+    try {
+        const { data, error } = await sb.auth.signUp({ email, password });
+        if (error) throw error;
+        
+        if (msg) {
+            msg.style.color = 'green';
+            msg.textContent = '✅ Регистрация успешна! Теперь войдите';
+        }
+        document.getElementById('authPassword').value = '';
+    } catch (err) {
+        if (msg) msg.textContent = '❌ ' + err.message;
+    }
 }
 
-// ========== СОХРАНЕНИЕ (только один запрос, без лишних загрузок) ==========
+async function logout() {
+    await sb.auth.signOut();
+    currentUser = null;
+    const userInfo = document.getElementById('userInfo');
+    if (userInfo) userInfo.style.display = 'none';
+    showMsg('👋 Вы вышли', 'info');
+}
+
+// ========== ЗАГРУЗКА ДАННЫХ ==========
+async function loadDoctors() {
+    const { data, error } = await sb.from('doctors').select('*');
+    if (!error) {
+        allDoctors = data || [];
+        renderDoctors();
+
+
+updateDoctorSelects();
+    }
+}
+
+async function loadAppointments() {
+    const { data, error } = await sb.from('appointments').select('*').order('created_at', { ascending: false });
+    if (!error) {
+        allAppointments = data || [];
+        renderAppointments();
+        updateTimeOptions();
+    }
+}
+
+async function loadReviews() {
+    const { data, error } = await sb.from('reviews').select('*').order('created_at', { ascending: false });
+    if (!error) {
+        allReviews = data || [];
+        renderReviews();
+    }
+}
+
+// ========== СОХРАНЕНИЕ ==========
 async function saveAppointment(data) {
     const { error } = await sb.from('appointments').insert([data]);
     if (error) throw error;
-    
-    // Обновляем кэш без лишнего запроса
-    const newAppointment = { ...data, id: Date.now().toString(), created_at: new Date().toISOString() };
-    allAppointments = [newAppointment, ...(allAppointments || [])];
-    renderAppointments();
-    updateTimeOptions();
-    return true;
+    await loadAppointments();
 }
 
 async function deleteAppointmentById(id) {
     const { error } = await sb.from('appointments').delete().eq('id', id);
     if (error) throw error;
-    
-    // Удаляем из кэша
-    allAppointments = allAppointments.filter(a => a.id !== id);
-    renderAppointments();
-    updateTimeOptions();
-    return true;
+    await loadAppointments();
 }
 
 async function saveReview(data) {
     const { error } = await sb.from('reviews').insert([data]);
     if (error) throw error;
-    
-    const newReview = { ...data, id: Date.now().toString(), created_at: new Date().toISOString() };
-    allReviews = [newReview, ...(allReviews || [])];
-    renderReviews();
-    return true;
+    await loadReviews();
 }
-
-// ========== ГЛОБАЛЬНЫЕ ДАННЫЕ (в памяти) ==========
-let allDoctors = [];
-let allAppointments = [];
-let allReviews = [];
 
 // ========== ОТОБРАЖЕНИЕ ==========
 function renderDoctors() {
     const container = document.getElementById('doctorsList');
     if (!container) return;
     
-    if (!allDoctors?.length) {
-        container.innerHTML = '<p class="empty-message">👨‍⚕️ Загрузка...</p>';
+    if (!allDoctors.length) {
+        container.innerHTML = '<p class="empty-message">Загрузка...</p>';
         return;
     }
     
     container.innerHTML = allDoctors.map(doc => `
         <div class="doctor-card">
-            <img src="${doc.photo || 'https://via.placeholder.com/150x150?text=Doctor'}" class="doctor-photo" loading="lazy">
+            <img src="${doc.photo || 'https://via.placeholder.com/150x150?text=Doctor'}" class="doctor-photo">
             <h3>${escapeHtml(doc.name)}</h3>
             <div class="doctor-specialty">${escapeHtml(doc.specialty)}</div>
             <div class="doctor-experience">Стаж: ${escapeHtml(doc.experience || '')}</div>
@@ -122,13 +188,13 @@ function renderAppointments() {
     const container = document.getElementById('appointmentsList');
     if (!container) return;
     
-    if (!allAppointments?.length) {
+    if (!allAppointments.length) {
         container.innerHTML = '<p class="empty-message">📭 У вас пока нет записей</p>';
         return;
     }
     
     container.innerHTML = allAppointments.map(a => {
-        const doctor = allDoctors?.find(d => d.id === a.doctor);
+        const doctor = allDoctors.find(d => d.id === a.doctor);
         return `
             <div class="appointment-card">
                 <div class="appointment-info">
@@ -146,19 +212,23 @@ function renderReviews() {
     const container = document.getElementById('reviewsList');
     if (!container) return;
     
-    if (!allReviews?.length) {
+    if (!allReviews.length) {
         container.innerHTML = '<p class="empty-message">⭐ Пока нет отзывов</p>';
         return;
     }
     
     container.innerHTML = allReviews.map(rev => {
-        const doctor = allDoctors?.find(d => d.id === rev.doctor_id);
+        // Ищем врача по doctor_id
+        const doctor = allDoctors.find(d => d.id === rev.doctor_id);
+        // Получаем имя врача или "Врач не найден"
+        const doctorName = doctor ? doctor.name : 'Врач';
+        
         return `
             <div class="review-card">
                 <div class="review-header">
                     <div>
                         <span class="review-name">${escapeHtml(rev.patient_name)}</span>
-                        <span class="review-doctor"> → ${doctor ? doctor.name : 'Врач'}</span>
+                        <span class="review-doctor"> → ${escapeHtml(doctorName)}</span>
                     </div>
                     <div class="review-rating">${'★'.repeat(rev.rating)}${'☆'.repeat(5 - rev.rating)}</div>
                 </div>
@@ -173,7 +243,7 @@ function updateDoctorSelects() {
     const select1 = document.getElementById('doctor');
     const select2 = document.getElementById('reviewDoctor');
     
-    if (!allDoctors?.length) return;
+    if (!allDoctors.length) return;
     
     const options = allDoctors.map(doc => `<option value="${doc.id}">${escapeHtml(doc.name)} (${escapeHtml(doc.specialty)})</option>`).join('');
     if (select1) select1.innerHTML = '<option value="">-- Выберите врача --</option>' + options;
@@ -190,7 +260,7 @@ function updateTimeOptions() {
         return;
     }
     
-    const booked = allAppointments?.filter(a => a.doctor === doctorId && a.date === date).map(a => a.time) || [];
+    const booked = allAppointments.filter(a => a.doctor === doctorId && a.date === date).map(a => a.time);
     
     let html = '<option value="">-- Выберите время --</option>';
     TIMES.forEach(t => {
@@ -212,6 +282,12 @@ window.deleteAppointment = async function(id) {
 };
 
 async function bookAppointment() {
+    // ПРОВЕРКА АВТОРИЗАЦИИ
+    if (!currentUser) {
+        showAuthModal();
+        return;
+    }
+    
     const doctorId = document.getElementById('doctor').value;
     const date = document.getElementById('date').value;
     const time = document.getElementById('time').value;
@@ -223,7 +299,7 @@ async function bookAppointment() {
         return;
     }
     
-    const taken = allAppointments?.some(a => a.doctor === doctorId && a.date === date && a.time === time);
+    const taken = allAppointments.some(a => a.doctor === doctorId && a.date === date && a.time === time);
     if (taken) {
         showMsg('❌ Это время занято', 'error');
         updateTimeOptions();
@@ -237,22 +313,35 @@ async function bookAppointment() {
         document.getElementById('time').innerHTML = '<option value="">-- Выберите время --</option>';
         document.getElementById('name').value = '';
         document.getElementById('phone').value = '';
-        showMsg('✅ Вы записаны!', 'success');
+        showMsg('✅ Вы успешно записаны!', 'success');
     } catch (e) {
         showMsg('❌ Ошибка', 'error');
     }
 }
 
-// ========== ОТЗЫВЫ ==========
-let selectedRating = 5;
+async function submitReview() {
+    const doctorId = document.getElementById('reviewDoctor').value;
+    const name = document.getElementById('reviewName').value.trim();
+    const comment = document.getElementById('reviewComment').value.trim();
+    
+    if (!doctorId) { showMsg('⚠️ Выберите врача', 'error'); return; }
+    if (!name) { showMsg('⚠️ Введите имя', 'error'); return; }
+    if (!comment) { showMsg('⚠️ Напишите отзыв', 'error'); return; }
+    
+    try {
+        await saveReview({ doctor_id: doctorId, patient_name: name, rating: selectedRating, comment });
+        document.getElementById('reviewDoctor').value = '';
+        document.getElementById('reviewName').value = '';
+        document.getElementById('reviewComment').value = '';
+        showMsg('⭐ Спасибо за отзыв!', 'success');
+    } catch (e) {
+        showMsg('❌ Ошибка', 'error');
+    }
+}
 
+// ========== ЗВЕЗДЫ ==========
 function initStars() {
     const stars = document.querySelectorAll('.star');
-    if (stars.length === 0) {
-        console.warn('Звезды не найдены');
-        return;
-    }
-    
     stars.forEach(star => {
         star.addEventListener('click', () => {
             selectedRating = parseInt(star.dataset.rating);
@@ -260,124 +349,9 @@ function initStars() {
                 if (i < selectedRating) s.classList.add('active');
                 else s.classList.remove('active');
             });
-            console.log('⭐ Выбрана оценка:', selectedRating);
         });
     });
-    
-    // Устанавливаем 5 звезд по умолчанию
-    stars.forEach((s, i) => {
-        if (i < 5) s.classList.add('active');
-    });
-    
-    console.log('⭐ Звезды инициализированы');
-}
-
-async function submitReview() {
-    // Получаем элементы с проверкой
-    const doctorSelect = document.getElementById('reviewDoctor');
-    const nameInput = document.getElementById('reviewName');
-    const commentTextarea = document.getElementById('reviewComment');
-    
-    // Проверяем, что элементы существуют
-    if (!doctorSelect) {
-        console.error('❌ Элемент reviewDoctor не найден');
-        showMsg('Ошибка: форма отзыва не найдена', 'error');
-        return;
-    }
-    if (!nameInput) {
-        console.error('❌ Элемент reviewName не найден');
-        showMsg('Ошибка: поле имени не найдено', 'error');
-        return;
-    }
-    if (!commentTextarea) {
-        console.error('❌ Элемент reviewComment не найден');
-        showMsg('Ошибка: поле отзыва не найдено', 'error');
-        return;
-    }
-    
-    const doctorId = doctorSelect.value;
-    const name = nameInput.value.trim();
-    const comment = commentTextarea.value.trim();
-    const rating = selectedRating;
-    
-    console.log('📝 Отправка отзыва:', { doctorId, name, comment, rating });
-    
-    if (!doctorId) {
-        showMsg('⚠️ Выберите врача', 'error');
-        return;
-    }
-    if (!name) {
-        showMsg('⚠️ Введите ваше имя', 'error');
-        return;
-    }
-    if (!comment) {
-        showMsg('⚠️ Напишите отзыв', 'error');
-        return;
-    }
-    
-    try {
-        const { data, error } = await sb
-            .from('reviews')
-            .insert([{
-                doctor_id: doctorId,
-                patient_name: name,
-                rating: rating,
-                comment: comment
-            }])
-            .select();
-        
-        if (error) {
-            console.error('❌ Ошибка Supabase:', error);
-            showMsg('❌ Ошибка: ' + error.message, 'error');
-            return;
-        }
-        
-        console.log('✅ Отзыв сохранен:', data);
-        
-        // Очищаем форму
-        doctorSelect.value = '';
-        nameInput.value = '';
-        commentTextarea.value = '';
-        
-        // Сбрасываем звезды
-        const stars = document.querySelectorAll('.star');
-        stars.forEach((s, i) => {
-            if (i < 5) s.classList.add('active');
-            else s.classList.remove('active');
-        });
-        selectedRating = 5;
-        
-        // Обновляем список отзывов
-        await loadReviews();
-        
-        showMsg('⭐ Спасибо за отзыв!', 'success');
-        
-    } catch (err) {
-        console.error('❌ Ошибка:', err);
-        showMsg('❌ Ошибка при сохранении', 'error');
-    }
-}
-async function loadReviews() {
-    try {
-        console.log('🔄 Загрузка отзывов...');
-        
-        const { data, error } = await sb
-            .from('reviews')
-            .select('*')
-            .order('created_at', { ascending: false });
-        
-        if (error) {
-            console.error('❌ Ошибка загрузки отзывов:', error);
-            return;
-        }
-        
-        allReviews = data || [];
-        console.log('✅ Загружено отзывов:', allReviews.length);
-        renderReviews();
-        
-    } catch (err) {
-        console.error('❌ Ошибка:', err);
-    }
+    stars.forEach((s, i) => { if (i < 5) s.classList.add('active'); });
 }
 
 // ========== СООБЩЕНИЯ ==========
@@ -386,7 +360,7 @@ function showMsg(text, type) {
     msg.textContent = text;
     msg.className = `message ${type}`;
     msg.style.display = 'block';
-    setTimeout(() => msg.style.display = 'none', 2000);
+    setTimeout(() => msg.style.display = 'none', 3000);
 }
 
 function escapeHtml(str) {
@@ -394,28 +368,38 @@ function escapeHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// ========== СОБЫТИЯ ==========
+// ========== ДАТА ==========
 const today = new Date().toISOString().split('T')[0];
-if (document.getElementById('date')) document.getElementById('date').min = today;
+if (document.getElementById('date')) {
+    document.getElementById('date').min = today;
+}
 
+// ========== ВКЛАДКИ ==========
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab).classList.add('active');
-        
-        // Загружаем только если нужно (ленивая загрузка)
-        if (btn.dataset.tab === 'doctors' && !allDoctors?.length) loadAllData();
-        if (btn.dataset.tab === 'reviews' && !allReviews?.length) loadAllData();
     });
 });
 
+// ========== СОБЫТИЯ ==========
 document.getElementById('doctor')?.addEventListener('change', updateTimeOptions);
 document.getElementById('date')?.addEventListener('change', updateTimeOptions);
 document.getElementById('submitBtn')?.addEventListener('click', bookAppointment);
 document.getElementById('submitReview')?.addEventListener('click', submitReview);
+document.getElementById('loginBtn')?.addEventListener('click', login);
+document.getElementById('registerBtn')?.addEventListener('click', register);
+document.getElementById('logoutBtn')?.addEventListener('click', logout);
+document.querySelector('.close')?.addEventListener('click', hideAuthModal);
+window.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('authModal')) hideAuthModal();
+});
 
 // ========== ЗАПУСК ==========
 initStars();
-loadAllData();
+checkAuth();
+loadDoctors();
+loadAppointments();
+loadReviews();
