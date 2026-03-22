@@ -3,56 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Запись в клинику</title>
+    <title>Клиника "Здоровье" - Запись на прием</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>🏥 Запись на прием</h1>
+        <h1>🏥 Клиника "Здоровье"</h1>
         
-        <div class="booking-form">
-            <div class="form-group">
-                <label for="doctor">👨‍⚕️ Выберите врача:</label>
-                <select id="doctor">
-                    <option value="">-- Выберите врача --</option>
-                    <option value="Терапевт Иванова М.И.">Терапевт Иванова М.И.</option>
-                    <option value="Кардиолог Петров С.А.">Кардиолог Петров С.А.</option>
-                    <option value="Невролог Сидорова А.В.">Невролог Сидорова А.В.</option>
-                    <option value="Офтальмолог Кузнецов Д.В.">Офтальмолог Кузнецов Д.В.</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="date">📅 Выберите дату:</label>
-                <input type="date" id="date">
-            </div>
-
-            <div class="form-group">
-                <label for="time">⏰ Выберите время:</label>
-                <select id="time">
-                    <option value="">-- Сначала выберите врача и дату --</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="name">👤 Ваше имя:</label>
-                <input type="text" id="name" placeholder="Введите ваше имя">
-            </div>
-
-            <div class="form-group">
-                <label for="phone">📞 Телефон:</label>
-                <input type="tel" id="phone" placeholder="+7 (___) ___-__-__">
-            </div>
-
-            <button id="submitBtn" class="submit-btn">✅ Записаться</button>
+        <!-- Навигация -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="booking">📝 Запись на прием</button>
+            <button class="tab-btn" data-tab="doctors">👨‍⚕️ Наши врачи</button>
+            <button class="tab-btn" data-tab="reviews">⭐ Отзывы</button>
         </div>
 
-        <div id="message" class="message"></div>
+        <!-- Вкладка: Запись на прием -->
+        <div id="booking" class="tab-content active">
+            <div class="booking-form">
+                <div class="form-group">
+                    <label for="doctor">👨‍⚕️ Выберите врача:</label>
+                    <select id="doctor">
+                        <option value="">-- Выберите врача --</option>
+                    </select>
+                </div>
 
-        <div class="appointments">
-            <h2>📋 Мои записи</h2>
-            <div id="appointmentsList" class="appointments-list">
+                <div class="form-group">
+                    <label for="date">📅 Выберите дату:</label>
+                    <input type="date" id="date">
+                </div>
+
+                <div class="form-group">
+                    <label for="time">⏰ Выберите время:</label>
+                    <select id="time">
+                        <option value="">-- Сначала выберите врача и дату --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">👤 Ваше имя:</label>
+                    <input type="text" id="name" placeholder="Введите ваше имя">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">📞 Телефон:</label>
+                    <input type="tel" id="phone" placeholder="+7 (___) ___-__-__">
+                </div>
+
+                <button id="submitBtn" class="submit-btn">✅ Записаться</button>
+            </div>
+
+            <div id="message" class="message"></div>
+
+            <div class="appointments">
+                <h2>📋 Мои записи</h2>
+                <div id="appointmentsList" class="appointments-list">
+                    <p class="empty-message">Загрузка...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка: Наши врачи -->
+        <div id="doctors" class="tab-content">
+            <h2>👨‍⚕️ Наши специалисты</h2>
+            <div id="doctorsList" class="doctors-grid">
                 <p class="empty-message">Загрузка...</p>
+            </div>
+        </div>
+
+        <!-- Вкладка: Отзывы (ИСПРАВЛЕННАЯ) -->
+        <div id="reviews" class="tab-content">
+            <h2>⭐ Отзывы пациентов</h2>
+            
+            <!-- Форма для отзыва -->
+            <div class="add-review">
+                <h3>📝 Оставить отзыв</h3>
+                <div class="form-group">
+                    <label>👨‍⚕️ Выберите врача:</label>
+                    <select id="reviewDoctor">
+                        <option value="">-- Выберите врача --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>👤 Ваше имя:</label>
+                    <input type="text" id="reviewName" placeholder="Введите ваше имя">
+                </div>
+                <div class="form-group">
+                    <label>⭐ Оценка:</label>
+                    <div class="rating">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+                    <input type="hidden" id="reviewRating" value="5">
+                </div>
+                <div class="form-group">
+
+
+<label>💬 Ваш отзыв:</label>
+                    <textarea id="reviewComment" rows="4" placeholder="Расскажите о вашем опыте посещения клиники..."></textarea>
+                </div>
+                <button id="submitReview" class="submit-btn">📝 Оставить отзыв</button>
+            </div>
+
+            <!-- Список отзывов -->
+            <h3>📖 Отзывы наших пациентов</h3>
+            <div id="reviewsList" class="reviews-list">
+                <p class="empty-message">⭐ Пока нет отзывов. Будьте первым!</p>
             </div>
         </div>
     </div>
