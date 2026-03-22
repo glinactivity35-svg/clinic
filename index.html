@@ -11,7 +11,6 @@
         <h1>🏥 Запись на прием</h1>
         
         <div class="booking-form">
-            <!-- Выбор врача -->
             <div class="form-group">
                 <label for="doctor">👨‍⚕️ Выберите врача:</label>
                 <select id="doctor">
@@ -23,13 +22,11 @@
                 </select>
             </div>
 
-            <!-- Выбор даты -->
             <div class="form-group">
                 <label for="date">📅 Выберите дату:</label>
                 <input type="date" id="date">
             </div>
 
-            <!-- Выбор времени -->
             <div class="form-group">
                 <label for="time">⏰ Выберите время:</label>
                 <select id="time">
@@ -37,7 +34,6 @@
                 </select>
             </div>
 
-            <!-- Поля для контактных данных -->
             <div class="form-group">
                 <label for="name">👤 Ваше имя:</label>
                 <input type="text" id="name" placeholder="Введите ваше имя">
@@ -56,11 +52,12 @@
         <div class="appointments">
             <h2>📋 Мои записи</h2>
             <div id="appointmentsList" class="appointments-list">
-                <p class="empty-message">У вас пока нет записей</p>
+                <p class="empty-message">Загрузка...</p>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
 </body>
 </html>
