@@ -12,7 +12,7 @@ body {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     background: white;
     border-radius: 20px;
@@ -23,17 +23,65 @@ body {
 h1 {
     text-align: center;
     color: #333;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+    font-size: 32px;
 }
 
 h2 {
     color: #555;
     margin-bottom: 20px;
+    font-size: 24px;
     border-bottom: 2px solid #667eea;
     padding-bottom: 10px;
 }
 
-.booking-form {
+h3 {
+    color: #666;
+    margin-bottom: 15px;
+    font-size: 20px;
+}
+
+/* Вкладки */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #666;
+    transition: all 0.3s;
+    border-radius: 8px;
+}
+
+.tab-btn:hover {
+    color: #667eea;
+    background: #f0f0f0;
+}
+
+.tab-btn.active {
+    color: #667eea;
+    border-bottom: 2px solid #667eea;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Форма */
+.booking-form, .add-review {
     background: #f8f9fa;
     padding: 25px;
     border-radius: 15px;
@@ -52,12 +100,26 @@ h2 {
 }
 
 .form-group select,
-.form-group input {
+.form-group input,
+.form-group textarea {
     width: 100%;
     padding: 12px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 16px;
+    transition: border-color 0.3s;
+    font-family: inherit;
+}
+
+.form-group select:focus,
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+textarea {
+    resize: vertical;
 }
 
 .submit-btn {
@@ -70,6 +132,7 @@ h2 {
     font-size: 18px;
     font-weight: 600;
     cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .submit-btn:hover {
@@ -77,6 +140,7 @@ h2 {
     box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
 }
 
+/* Сообщения */
 .message {
     margin: 20px 0;
     padding: 12px;
@@ -87,23 +151,33 @@ h2 {
 .message.success {
     background: #d4edda;
     color: #155724;
+    border: 1px solid #c3e6cb;
     display: block;
 }
 
 .message.error {
     background: #f8d7da;
     color: #721c24;
+    border: 1px solid #f5c6cb;
     display: block;
 }
 
-.appointments-list {
+.message.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+    display: block;
+}
+
+/* Список записей */
+.appointments-list, .reviews-list {
     background: #f8f9fa;
     border-radius: 15px;
     padding: 15px;
     min-height: 150px;
 }
 
-.appointment-card {
+.appointment-card, .review-card {
     background: white;
     padding: 15px;
     border-radius: 10px;
@@ -111,6 +185,7 @@ h2 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .appointment-info {
@@ -119,6 +194,7 @@ h2 {
 
 .appointment-info strong {
     color: #667eea;
+    font-size: 16px;
 }
 
 .delete-btn {
@@ -130,46 +206,8 @@ h2 {
     cursor: pointer;
 }
 
-.empty-message {
-    text-align: center;
-    color: #999;
-    padding: 20px;
-}
-
-.tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 30px;
-    border-bottom: 2px solid #e0e0e0;
-    padding-bottom: 10px;
-}
-
-.tab-btn {
-    padding: 10px 20px;
-    background: none;
-    border: none;
-    font-size: 16px;
-    cursor: pointer;
-    color: #666;
-    transition: all 0.3s;
-}
-
-.tab-btn:hover {
-    color: #667eea;
-}
-
-.tab-btn.active {
-    color: #667eea;
-    border-bottom: 2px solid #667eea;
-    margin-bottom: -12px;
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
+.delete-btn:hover {
+    background: #c82333;
 }
 
 /* Карточки врачей */
@@ -194,8 +232,11 @@ h2 {
 }
 
 .doctor-photo {
-    width: 150px;
-    height: 150px;
+    width: 120px
+
+
+;
+    height: 120px;
     border-radius: 50%;
     object-fit: cover;
     margin-bottom: 15px;
@@ -212,17 +253,10 @@ h2 {
     margin-bottom: 10px;
 }
 
-.doctor-experience {
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 10px;
-}
-
 .doctor-description {
     color: #777;
     font-size: 14px;
     margin: 10px 0;
-    line-height: 1.4;
 }
 
 .doctor-schedule {
@@ -233,19 +267,7 @@ h2 {
     border-top: 1px solid #e0e0e0;
 }
 
-/* Отзывы */
-.add-review {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 30px;
-}
-
-.add-review h3 {
-    margin-bottom: 20px;
-    color: #333;
-}
-
+/* Звезды рейтинга */
 .rating {
     display: flex;
     gap: 5px;
@@ -262,21 +284,11 @@ h2 {
     color: #ffc107;
 }
 
-textarea {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 16px;
-    font-family: inherit;
-    resize: vertical;
-}
-
 .review-card {
     background: white;
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
@@ -295,6 +307,7 @@ textarea {
 .review-doctor {
     color: #667eea;
     font-size: 14px;
+    margin-left: 10px;
 }
 
 .review-rating {
@@ -306,10 +319,92 @@ textarea {
     color: #666;
     line-height: 1.5;
     margin-top: 10px;
+    text-decoration: none !important;
 }
 
 .review-date {
     color: #999;
     font-size: 12px;
     margin-top: 10px;
+    text-decoration: none !important;
+}
+
+.empty-message {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 30px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
+}
+
+.close:hover {
+    color: #333;
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.logout-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Убираем все зачеркивания */
+.review-card,
+.review-card *,
+.reviews-list,
+.reviews-list *,
+.review-header,
+.review-header *,
+.review-name,
+.review-doctor,
+.review-rating,
+.review-comment,
+.review-date,
+.comment,
+.rating,
+.star {
+    text-decoration: none !important;
+    text-decoration-line: none !important;
+    text-decoration-style: none !important;
 }
