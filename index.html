@@ -10,6 +10,12 @@
     <div class="container">
         <h1>🏥 Клиника "Здоровье"</h1>
         
+        <!-- Информация о пользователе -->
+        <div id="userInfo" class="user-info" style="display: none;">
+            <span>👤 <span id="userEmail"></span></span>
+            <button id="logoutBtn" class="logout-btn">Выйти</button>
+        </div>
+        
         <!-- Навигация -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="booking">📝 Запись на прием</button>
@@ -70,11 +76,10 @@
             </div>
         </div>
 
-        <!-- Вкладка: Отзывы (ИСПРАВЛЕННАЯ) -->
+        <!-- Вкладка: Отзывы -->
         <div id="reviews" class="tab-content">
             <h2>⭐ Отзывы пациентов</h2>
             
-            <!-- Форма для отзыва -->
             <div class="add-review">
                 <h3>📝 Оставить отзыв</h3>
                 <div class="form-group">
@@ -94,24 +99,44 @@
                         <span class="star" data-rating="2">★</span>
                         <span class="star" data-rating="3">★</span>
                         <span class="star" data-rating="4">★</span>
-                        <span class="star" data-rating="5">★</span>
+                        <s
+
+
+pan class="star" data-rating="5">★</span>
                     </div>
                     <input type="hidden" id="reviewRating" value="5">
                 </div>
                 <div class="form-group">
-
-
-<label>💬 Ваш отзыв:</label>
-                    <textarea id="reviewComment" rows="4" placeholder="Расскажите о вашем опыте посещения клиники..."></textarea>
+                    <label>💬 Ваш отзыв:</label>
+                    <textarea id="reviewComment" rows="4" placeholder="Расскажите о вашем опыте..."></textarea>
                 </div>
                 <button id="submitReview" class="submit-btn">📝 Оставить отзыв</button>
             </div>
 
-            <!-- Список отзывов -->
-            <h3>📖 Отзывы наших пациентов</h3>
+            <h3>📖 Отзывы пациентов</h3>
             <div id="reviewsList" class="reviews-list">
-                <p class="empty-message">⭐ Пока нет отзывов. Будьте первым!</p>
+                <p class="empty-message">⭐ Пока нет отзывов</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно авторизации -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>🔐 Авторизация</h2>
+            <p>Для записи на прием необходимо войти</p>
+            <div class="form-group">
+                <label>📧 Email:</label>
+                <input type="email" id="authEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label>🔑 Пароль:</label>
+                <input type="password" id="authPassword" placeholder="••••••••">
+            </div>
+            <button id="loginBtn" class="submit-btn">Войти</button>
+            <button id="registerBtn" class="submit-btn" style="background: #28a745; margin-top: 10px;">Зарегистрироваться</button>
+            <p id="authMessage" style="margin-top: 10px; color: red;"></p>
         </div>
     </div>
 
