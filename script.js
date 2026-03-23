@@ -13,7 +13,122 @@ let allAppointments = [];
 let allReviews = [];
 let selectedRating = 5;
 
-// ========== АВТОРИЗАЦИЯ ==========
+// ========== АВТОРИЗАЦИЯ ПО КОДУ ==========
+
+// Показываем модальное окно
+function showAuthModal() {
+    const modal = document.getElementById('authModal');
+    const stepEmail = document.getElementById('stepEmail');
+    const stepCode = document.getElementById('stepCode');
+    const authEmail = document.getElementById('authEmail');
+    const authCode = document.getElementById('authCode');
+    const authMessage = document.getElementById('authMessage');
+    
+    // Сбрасываем форму
+    if (stepEmail) stepEmail.style.display = 'block';
+    if (stepCode) stepCode.style.display = 'none';
+    if (authEmail) authEmail.value = '';
+    if (authCode) authCode.value = '';
+    if (authMessage) authMessage.textContent = '';
+    
+    if (modal) modal.style.display = 'block';
+}
+
+function hideAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Отправка кода на email
+async function sendCode() {
+    const email = document.getElementById('authEmail').value.trim();
+    const messageEl = document.getElementById('authMessage');
+    
+    if (!email) {
+        messageEl.textContent = '❌ Введите email';
+        return;
+    }
+    
+    if (!email.includes('@') || !email.includes('.')) {
+        messageEl.textContent = '❌ Введите корректный email';
+        return;
+    }
+    
+    messageEl.textContent = '⏳ Отправка кода...';
+    messageEl.style.color = 'blue';
+    
+    try {
+        const { error } = await sb.auth.signInWithOtp({
+            email: email,
+            options: {
+                shouldCreateUser: true
+            }
+        });
+        
+        if (error) throw error;
+        
+        currentEmail = email;
+        messageEl.style.color = 'green';
+        messageEl.textContent = '✅ Код отправлен! Проверьте почту';
+        
+        document.getElementById('stepEmail').style.display = 'none';
+        document.getElementById('stepCode').style.display = 'block';
+        
+    } catch (err) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = '❌ ' + err.message;
+    }
+}
+
+let currentEmail = '';
+
+// Проверка кода
+async function verifyCode() {
+    const code = document.getElementById('authCode').value.trim();
+    const messageEl = document.getElementById('authMessage');
+    
+    if (!code) {
+        messageEl.textContent = '❌ Введите код';
+        return;
+    }
+    
+    messageEl.textContent = '⏳ Проверка кода...';
+    messageEl.style.color = 'blue';
+    
+    try {
+        const { data, error } = await sb.auth.verifyOtp({
+            email: currentEmail,
+            token: code,
+            type: 'email'
+        });
+        
+        if (error) throw error;
+        
+        currentUser = data.user;
+        
+        const userInfo = document.getElementById('userInfo');
+        const userEmail = document.getElementById('userEmail');
+        if (userInfo) userInfo.style.display = 'flex';
+        if (userEmail) userEmail.textContent = currentUser.email;
+        
+        hideAuthModal();
+        showMsg('✅ Добро пожаловать, ' + currentUser.email, 'success');
+        
+    } catch (err) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = '❌ Неверный код. Попробуйте снова';
+    }
+}
+
+// Вернуться к вводу email
+function backToEmail() {
+    document.getElementById('stepEmail').style.display = 'block';
+    document.getElementById('stepCode').style.display = 'none';
+    document.getElementById('authCode').value = '';
+    document.getElementById('authMessage').textContent = '';
+}
+
+// Проверка авторизации при загрузке
 async function checkAuth() {
     try {
         const { data: { session }, error } = await sb.auth.getSession();
@@ -26,140 +141,101 @@ async function checkAuth() {
             if (userInfo) userInfo.style.display = 'flex';
             if (userEmail) userEmail.textContent = currentUser.email;
             console.log('✅ Авторизован:', currentUser.email);
-        } else {
-            console.log('❌ Не авторизован');
+            return true;
         }
+        console.log('❌ Не авторизован');
+        return false;
     } catch (err) {
         console.error('Ошибка проверки сессии:', err);
+        return false;
     }
 }
 
-function showAuthModal() {
-    const modal = document.getElementById('authModal');
-    if (modal) modal.style.display = 'block';
-}
-
-function hideAuthModal() {
-    const modal = document.getElementById('authModal');
-    const email = document.getElementById('authEmail');
-    const password = document.getElementById('authPassword');
-    const msg = document.getElementById('authMessage');
-    if (modal) modal.style.display = 'none';
-    if (email) email.value = '';
-    if (password) password.value = '';
-    if (msg) msg.textContent = '';
-}
-
-async function login() {
-    const email = document.getElementById('authEmail')?.value;
-    const password = document.getElementById('authPassword')?.value;
-    const msg = document.getElementById('authMessage');
-    
-    if (!email || !password) {
-        if (msg) msg.textContent = '❌ Заполните все поля';
-        return;
-    }
-    
-    try {
-        const { data, error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        
-        currentUser = data.user;
-        const userInfo = document.getElementById('userInfo');
-        const userEmail = document.getElementById('userEmail');
-        if (userInfo) userInfo.style.display = 'flex';
-        if (userEmail) userEmail.textContent = currentUser.email;
-        
-        hideAuthModal();
-        showMsg('✅ Добро пожаловать, ' + currentUser.email, 'success');
-    } catch (err) {
-        if (msg) msg.textContent = '❌ ' + err.message;
-    }
-}
-
-async function register() {
-    const email = document.getElementById('authEmail')?.value;
-    const password = document.getElementById('authPassword')?.value;
-    const msg = document.getElementById('authMessage');
-    
-    if (!email || !password) {
-        if (msg) msg.textContent = '❌ Заполните все поля';
-        return;
-    }
-    
-    if (password.length < 6) {
-        if (msg) msg.textContent = '❌ Пароль не менее 6 символов';
-        return;
-    }
-    
-    try {
-        const { data, error } = await sb.auth.signUp({ email, password });
-        if (error) throw error;
-        
-        if (msg) {
-            msg.style.color = 'green';
-            msg.textContent = '✅ Регистрация успешна! Теперь войдите';
-        }
-        document.getElementById('authPassword').value = '';
-    } catch (err) {
-        if (msg) msg.textContent = '❌ ' + err.message;
-    }
-}
-
+// Выход
 async function logout() {
     await sb.auth.signOut();
     currentUser = null;
     const userInfo = document.getElementById('userInfo');
     if (userInfo) userInfo.style.display = 'none';
-    showMsg('👋 Вы вышли', 'info');
+    showMsg('👋 Вы вышли из системы', 'info');
 }
 
 // ========== ЗАГРУЗКА ДАННЫХ ==========
 async function loadDoctors() {
-    const { data, error } = await sb.from('doctors').select('*');
-    if (!error) {
+    try {
+        const { data, error } = await sb.from('doctors').select('*');
+        if (error) throw error;
         allDoctors = data || [];
         renderDoctors();
-
-
-updateDoctorSelects();
+        updateDoctorSelects();
+        console.log('✅ Загружено врачей:', allDoctors.length);
+    } catch (error) {
+        console.error('Ошибка загрузки врачей:', error);
     }
 }
 
 async function loadAppointments() {
-    const { data, error } = await sb.from('appointments').select('*').order('created_at', { ascending: false });
-    if (!error) {
+    try {
+        const { data, error } = await sb.from('appointments').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
         allAppointments = data || [];
         renderAppointments();
         updateTimeOptions();
+        console.log('✅ Загружено записей:', allAppointments.length);
+    } catch (error) {
+        console.error('Ошибка загрузки записей:', error);
     }
 }
 
 async function loadReviews() {
-    const { data, error } = await sb.from('reviews').select('*').order('created_at', { ascending: false });
-    if (!error) {
+    try {
+        const { data, error } = await sb.from('reviews').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
         allReviews = data || [];
         renderReviews();
+        console.log('✅ Загружено отзывов:', allReviews.length);
+    } catch (error) {
+        console.error('Ошибка загрузки отзывов:', error);
     }
 }
 
 // ========== СОХРАНЕНИЕ ==========
 async function saveAppointment(data) {
-    const { error } = await sb.from('appointments').insert([data]);
-    if (error) throw error;
-    await loadAppointments();
+    try {
+        const { error } = await sb.from('appointments').insert([data]);
+        if (error) throw error;
+        await loadAppointments();
+        return true;
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        showMsg('❌ Ошибка сохранения', 'error');
+        return false;
+    }
 }
 
 async function deleteAppointmentById(id) {
-    const { error } = await sb.from('appointments').delete().eq('id', id);
-    if (error) throw error;
-    await loadAppointments();
+    try {
+        const { error } = await sb.from('appointments').delete().eq('id', id);
+        if (error) throw error;
+        await loadAppointments();
+        return true;
+    } catch (error) {
+        console.error('Ошибка удаления:', error);
+        return false;
+    }
 }
 
 async function saveReview(data) {
-    const { error } = await sb.from('reviews').insert([data]);
-    if (error) throw error;
-    await loadReviews();
+    try {
+        const { error } = await sb.from('reviews').insert([data]);
+        if (error) throw error;
+        await loadReviews();
+        return true;
+    } catch (error) {
+        console.error('Ошибка сохранения отзыва:', error);
+        showMsg('❌ Ошибка сохранения отзыва', 'error');
+        return false;
+    }
 }
 
 // ========== ОТОБРАЖЕНИЕ ==========
@@ -168,18 +244,20 @@ function renderDoctors() {
     if (!container) return;
     
     if (!allDoctors.length) {
-        container.innerHTML = '<p class="empty-message">Загрузка...</p>';
+        container.innerHTML = '<p class="empty-message">👨‍⚕️ Загрузка врачей...</p>';
         return;
     }
     
     container.innerHTML = allDoctors.map(doc => `
         <div class="doctor-card">
-            <img src="${doc.photo || 'https://via.placeholder.com/150x150?text=Doctor'}" class="doctor-photo">
+            <img src="${doc.photo || 'https://via.placeholder.com/150x150?text=Doctor'}" class="doctor-photo" loading="lazy">
             <h3>${escapeHtml(doc.name)}</h3>
             <div class="doctor-specialty">${escapeHtml(doc.specialty)}</div>
-            <div class="doctor-experience">Стаж: ${escapeHtml(doc.experience || '')}</div>
+
+
+<div class="doctor-experience">Стаж: ${escapeHtml(doc.experience || '')}</div>
             <div class="doctor-description">${escapeHtml(doc.description || '')}</div>
-            <div class="doctor-schedule">⏰ ${escapeHtml(doc.schedule || '')}</div>
+            <div class="doctor-schedule">⏰ ${escapeHtml(doc.schedule || 'График уточняйте')}</div>
         </div>
     `).join('');
 }
@@ -198,7 +276,7 @@ function renderAppointments() {
         return `
             <div class="appointment-card">
                 <div class="appointment-info">
-                    <strong>${doctor ? doctor.name : a.doctor}</strong>
+                    <strong>${doctor ? doctor.name : 'Врач'}</strong>
                     <p>📅 ${escapeHtml(a.date)} | ⏰ ${escapeHtml(a.time)}</p>
                     <p>👤 ${escapeHtml(a.name)} | 📞 ${escapeHtml(a.phone)}</p>
                 </div>
@@ -213,16 +291,13 @@ function renderReviews() {
     if (!container) return;
     
     if (!allReviews.length) {
-        container.innerHTML = '<p class="empty-message">⭐ Пока нет отзывов</p>';
+        container.innerHTML = '<p class="empty-message">⭐ Пока нет отзывов. Будьте первым!</p>';
         return;
     }
     
     container.innerHTML = allReviews.map(rev => {
-        // Ищем врача по doctor_id
         const doctor = allDoctors.find(d => d.id === rev.doctor_id);
-        // Получаем имя врача или "Врач не найден"
         const doctorName = doctor ? doctor.name : 'Врач';
-        
         return `
             <div class="review-card">
                 <div class="review-header">
@@ -267,22 +342,23 @@ function updateTimeOptions() {
         if (!booked.includes(t)) html += `<option value="${t}">${t}</option>`;
     });
     
+    if (TIMES.length === booked.length) html = '<option value="">-- На этот день нет свободного времени --</option>';
     select.innerHTML = html;
 }
 
 // ========== ДЕЙСТВИЯ ==========
 window.deleteAppointment = async function(id) {
     if (!confirm('❓ Отменить запись?')) return;
-    try {
-        await deleteAppointmentById(id);
+    const success = await deleteAppointmentById(id);
+    if (success) {
         showMsg('✅ Запись отменена', 'success');
-    } catch (e) {
-        showMsg('❌ Ошибка', 'error');
+    } else {
+        showMsg('❌ Ошибка при отмене', 'error');
     }
 };
 
 async function bookAppointment() {
-    // ПРОВЕРКА АВТОРИЗАЦИИ
+    // Проверка авторизации
     if (!currentUser) {
         showAuthModal();
         return;
@@ -301,21 +377,19 @@ async function bookAppointment() {
     
     const taken = allAppointments.some(a => a.doctor === doctorId && a.date === date && a.time === time);
     if (taken) {
-        showMsg('❌ Это время занято', 'error');
+        showMsg('❌ Это время уже занято', 'error');
         updateTimeOptions();
         return;
     }
     
-    try {
-        await saveAppointment({ doctor: doctorId, date, time, name, phone });
+    const success = await saveAppointment({ doctor: doctorId, date, time, name, phone });
+    if (success) {
         document.getElementById('doctor').value = '';
         document.getElementById('date').value = '';
         document.getElementById('time').innerHTML = '<option value="">-- Выберите время --</option>';
         document.getElementById('name').value = '';
         document.getElementById('phone').value = '';
         showMsg('✅ Вы успешно записаны!', 'success');
-    } catch (e) {
-        showMsg('❌ Ошибка', 'error');
     }
 }
 
@@ -324,18 +398,31 @@ async function submitReview() {
     const name = document.getElementById('reviewName').value.trim();
     const comment = document.getElementById('reviewComment').value.trim();
     
-    if (!doctorId) { showMsg('⚠️ Выберите врача', 'error'); return; }
-    if (!name) { showMsg('⚠️ Введите имя', 'error'); return; }
-    if (!comment) { showMsg('⚠️ Напишите отзыв', 'error'); return; }
+    if (!doctorId) {
+        showMsg('⚠️ Выберите врача', 'error');
+        return;
+    }
+    if (!name) {
+        showMsg('⚠️ Введите ваше имя', 'error');
+        return;
+    }
+    if (!comment) {
+        showMsg('⚠️ Напишите отзыв', 'error');
+        return;
+    }
     
-    try {
-        await saveReview({ doctor_id: doctorId, patient_name: name, rating: selectedRating, comment });
+    const success = await saveReview({
+        doctor_id: doctorId,
+        patient_name: name,
+        rating: selectedRating,
+        comment: comment
+    });
+    
+    if (success) {
         document.getElementById('reviewDoctor').value = '';
         document.getElementById('reviewName').value = '';
         document.getElementById('reviewComment').value = '';
         showMsg('⭐ Спасибо за отзыв!', 'success');
-    } catch (e) {
-        showMsg('❌ Ошибка', 'error');
     }
 }
 
@@ -357,15 +444,24 @@ function initStars() {
 // ========== СООБЩЕНИЯ ==========
 function showMsg(text, type) {
     const msg = document.getElementById('message');
+    if (!msg) return;
     msg.textContent = text;
     msg.className = `message ${type}`;
     msg.style.display = 'block';
-    setTimeout(() => msg.style.display = 'none', 3000);
+    setTimeout(() => {
+        msg.style.display = 'none';
+        msg.className = 'message';
+    }, 3000);
 }
 
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // ========== ДАТА ==========
@@ -389,8 +485,11 @@ document.getElementById('doctor')?.addEventListener('change', updateTimeOptions)
 document.getElementById('date')?.addEventListener('change', updateTimeOptions);
 document.getElementById('submitBtn')?.addEventListener('click', bookAppointment);
 document.getElementById('submitReview')?.addEventListener('click', submitReview);
-document.getElementById('loginBtn')?.addEventListener('click', login);
-document.getElementById('registerBtn')?.addEventListener('click', register);
+
+// Авторизация
+document.getElementById('sendCodeBtn')?.addEventListener('click', sendCode);
+document.getElementById('verifyCodeBtn')?.addEventListener('click', verifyCode);
+document.getElementById('backToEmailBtn')?.addEventListener('click', backToEmail);
 document.getElementById('logoutBtn')?.addEventListener('click', logout);
 document.querySelector('.close')?.addEventListener('click', hideAuthModal);
 window.addEventListener('click', (e) => {
