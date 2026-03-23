@@ -120,25 +120,36 @@ pan class="star" data-rating="5">★</span>
         </div>
     </div>
 
-    <!-- Модальное окно авторизации -->
-    <div id="authModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>🔐 Авторизация</h2>
-            <p>Для записи на прием необходимо войти</p>
+<!-- Модальное окно авторизации по коду -->
+<div id="authModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>🔐 Авторизация</h2>
+        
+        <!-- Шаг 1: Ввод email -->
+        <div id="stepEmail">
+            <p>Введите email для входа</p>
             <div class="form-group">
                 <label>📧 Email:</label>
                 <input type="email" id="authEmail" placeholder="your@email.com">
             </div>
-            <div class="form-group">
-                <label>🔑 Пароль:</label>
-                <input type="password" id="authPassword" placeholder="••••••••">
-            </div>
-            <button id="loginBtn" class="submit-btn">Войти</button>
-            <button id="registerBtn" class="submit-btn" style="background: #28a745; margin-top: 10px;">Зарегистрироваться</button>
-            <p id="authMessage" style="margin-top: 10px; color: red;"></p>
+            <button id="sendCodeBtn" class="submit-btn">📧 Отправить код</button>
         </div>
+        
+        <!-- Шаг 2: Ввод кода (скрыт по умолчанию) -->
+        <div id="stepCode" style="display: none;">
+            <p>Введите код из письма</p>
+            <div class="form-group">
+                <label>🔑 Код подтверждения:</label>
+                <input type="text" id="authCode" placeholder="123456">
+            </div>
+            <button id="verifyCodeBtn" class="submit-btn">✅ Подтвердить</button>
+            <button id="backToEmailBtn" class="submit-btn" style="background: #6c757d; margin-top: 10px;">← Назад</button>
+        </div>
+        
+        <p id="authMessage" style="margin-top: 10px; color: red;"></p>
     </div>
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
