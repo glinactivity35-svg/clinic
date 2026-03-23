@@ -389,6 +389,19 @@ textarea {
     cursor: pointer;
 }
 
+/* Стили для шагов авторизации */
+#stepEmail, #stepCode {
+    transition: all 0.3s;
+}
+
+#backToEmailBtn {
+    background: #6c757d;
+}
+
+#backToEmailBtn:hover {
+    background: #5a6268;
+}
+
 /* Убираем все зачеркивания */
 .review-card,
 .review-card *,
